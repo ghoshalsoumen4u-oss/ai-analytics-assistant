@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Analytics Assistant — AdventureWorks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --pbi: #F2C811;
+    --pbi-dark: #c9a50e;
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --blue-mid: #378ADD;
+    --teal: #0F6E56;
+    --teal-light: #E1F5EE;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --green: #3B6D11;
+    --green-light: #EAF3DE;
+    --gray: #5F5E5A;
+    --gray-light: #F1EFE8;
+    --border: rgba(0,0,0,0.1);
+    --bg: #F7F6F2;
+    --surface: #FFFFFF;
+    --text: #1a1a18;
+    --text-muted: #6b6b67;
+    --text-faint: #9b9b96;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .logo { display: flex; align-items: center; gap: 8px; }
+  .logo-icon {
+    width: 30px; height: 30px;
+    background: var(--pbi);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .logo-text { font-size: 14px; font-weight: 600; color: var(--text); }
+  .badge {
+    font-size: 10px; font-weight: 600;
+    padding: 3px 8px; border-radius: 20px;
+    letter-spacing: 0.3px;
+  }
+  .badge-pbi { background: var(--pbi); color: #1a1a00; }
+  .badge-ai { background: var(--blue-light); color: var(--blue); }
+  .badge-data { background: var(--teal-light); color: var(--teal); margin-left: auto; font-size: 10px; }
+  .topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+  /* ── KPI STRIP ── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 16px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .kpi-tile {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .kpi-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .kpi-val { font-size: 18px; font-weight: 600; color: var(--text); line-height: 1.1; }
+  .kpi-lbl { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 104px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 16px;
+    overflow-y: auto;
+  }
+  .s-section { margin-bottom: 20px; }
+  .s-title {
+    font-size: 10px; font-weight: 600;
+    color: var(--text-faint);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 8px; padding: 0 4px;
+  }
+  .sq {
+    font-size: 12px; color: var(--text);
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg);
+    margin-bottom: 5px; cursor: pointer;
+    line-height: 1.4; transition: all 0.15s;
+    display: flex; align-items: flex-start; gap: 6px;
+  }
+  .sq:hover { border-color: var(--blue-mid); color: var(--blue); background: var(--blue-light); }
+  .sq-icon { flex-shrink: 0; margin-top: 1px; opacity: 0.6; font-size: 13px; }
+  .schema-item {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 11px; color: var(--text-muted); padding: 3px 4px;
+  }
+  .sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── MAIN ── */
+  .main { padding: 20px 24px; overflow-y: auto; }
+
+  /* ── INPUT ── */
+  .input-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+  .input-lbl {
+    font-size: 11px; font-weight: 600;
+    color: var(--text-muted); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 5px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .input-row { display: flex; gap: 8px; }
+  .nl-inp {
+    flex: 1; font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none; transition: border-color 0.15s;
+  }
+  .nl-inp:focus { border-color: var(--blue-mid); background: #fff; }
+  .nl-inp::placeholder { color: var(--text-faint); }
+  .ask-btn {
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    background: var(--blue);
+    color: #fff; border: none;
+    font-size: 13px; font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .ask-btn:hover { background: #0d4a85; }
+  .ask-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── RESULT CARD ── */
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .q-label {
+    font-size: 11px; color: var(--text-muted);
+    margin-bottom: 12px; display: flex; align-items: flex-start; gap-: 5px;
+    font-style: italic; line-height: 1.4;
+  }
+  .tabs {
+    display: flex; gap: 0; margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    font-size: 12px; font-weight: 500;
+    padding: 6px 14px; border: none; background: none;
+    color: var(--text-muted); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px; transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+  .tab:hover:not(.active) { color: var(--text); }
+  .tc { display: none; }
+  .tc.active { display: block; }
+
+  /* Insight tab */
+  .insight-text { font-size: 13px; color: var(--text); line-height: 1.75; }
+  .rec-box {
+    margin-top: 12px; padding: 10px 12px;
+    background: var(--blue-light); border-radius: var(--radius);
+    font-size: 12px; color: var(--blue);
+    display: flex; gap: 7px; align-items: flex-start; line-height: 1.5;
+    border-left: 3px solid var(--blue-mid);
+  }
+
+  /* DAX tab */
+  .dax-wrap { position: relative; }
+  .dax-block {
+    background: #1e1e2e; border-radius: var(--radius);
+    padding: 16px 14px; padding-top: 36px;
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    color: #cdd6f4; line-height: 1.9; white-space: pre-wrap;
+    border: 1px solid rgba(255,255,255,0.07);
+    max-height: 320px; overflow-y: auto;
+  }
+  .dax-toolbar {
+    position: absolute; top: 0; left: 0; right: 0;
+    background: #181825; border-radius: var(--radius) var(--radius) 0 0;
+    padding: 6px 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .dax-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dax-label { font-size: 11px; color: #6c7086; margin-left: auto; font-family: 'DM Mono', monospace; }
+  .copy-btn {
+    font-size: 11px; padding: 3px 10px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+    color: #cdd6f4; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,0.15); }
+  .dax-note {
+    margin-top: 8px; font-size: 11px; color: var(--text-muted);
+    display: flex; align-items: center; gap: 5px;
+    padding: 7px 10px; background: var(--amber-light);
+    border-radius: var(--radius); border-left: 3px solid var(--amber);
+  }
+
+  /* Visual tab */
+  .vis-wrap {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px;
+  }
+  .vis-title { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .bar-lbl { font-size: 11px; color: var(--text-muted); width: 140px; text-align: right; flex-shrink: 0; line-height: 1.3; }
+  .bar-track { flex: 1; background: var(--border); border-radius: 3px; height: 22px; overflow: hidden; min-width: 60px; }
+  .bar-fill {
+    height: 100%; border-radius: 3px;
+    display: flex; align-items: center; padding-left: 7px;
+    font-size: 10px; font-weight: 600; color: #fff;
+    transition: width 1s cubic-bezier(.4,0,.2,1);
+  }
+  .kpi-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .kpi-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px; text-align: center;
+  }
+  .kc-val { font-size: 20px; font-weight: 600; color: var(--text); }
+  .kc-lbl { font-size: 10px; color: var(--text-muted); margin-top: 2px; line-height: 1.3; }
+  .kc-delta { font-size: 11px; margin-top: 4px; font-weight: 500; }
+  .up { color: var(--green); }
+  .dn { color: var(--red); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center; padding: 48px 20px;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-lg);
+    color: var(--text-muted);
+  }
+  .empty-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.4; }
+  .empty-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  .empty-sub { font-size: 12px; line-height: 1.6; }
+
+  /* Loading */
+  .loading-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 32px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; box-shadow: var(--shadow);
+  }
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: var(--text-muted); }
+
+  /* Donut */
+  .donut-wrap { display: flex; align-items: center; gap: 20px; }
+  .legend-row { display: flex; align-items: center; gap: 7px; font-size: 12px; margin-bottom: 7px; color: var(--text-muted); }
+  .ldot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .lval { margin-left: auto; font-weight: 600; color: var(--text); }
+
+  /* Line */
+  .line-svg { width: 100%; overflow: visible; }
+
+  /* No API notice */
+  .no-api-banner {
+    background: var(--green-light); border: 1px solid #b8d98f;
+    border-radius: var(--radius); padding: 8px 12px;
+    font-size: 11px; color: var(--green);
+    display: flex; align-items: center; gap: 6px; margin-top: 8px;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <span class="logo-text">AI Analytics Assistant</span>
+  </div>
+  <span class="badge badge-pbi">Power BI</span>
+  <span class="badge badge-ai">AI Powered</span>
+  <div class="topbar-right">
+    <span class="badge badge-data">AdventureWorks · 56,046 records · 2015–2017</span>
+  </div>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip">
+  <div class="kpi-tile">
+    <div class="kpi-icon" style="background:#E6F1FB">💰</div>
+    <div><div class="kpi-val">$24.9M</div><div class="kpi-lbl">Total Revenue</div></div>
+  </div>
+  <div class="kpi-tile">
+    <div class="kpi-icon" style="background:#EAF3DE">📈</div>
+    <div><div class="kpi-val">$10.5M</div><div class="kpi-lbl">Total Profit</div></div>
+  </div>
+  <div class="kpi-tile">
+    <div class="kpi-icon" style="background:#FAEEDA">📦</div>
+    <div><div class="kpi-val">84,174</div><div class="kpi-lbl">Units Sold</div></div>
+  </div>
+  <div class="kpi-tile">
+    <div class="kpi-icon" style="background:#FCEBEB">🔄</div>
+    <div><div class="kpi-val">1,828</div><div class="kpi-lbl">Total Returns</div></div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="s-section">
+      <div class="s-title">Sample Questions</div>
+      <div class="sq" onclick="setQ('Top 10 products by profit')">
+        <span class="sq-icon">🏆</span> Top 10 products by profit
+      </div>
+      <div class="sq" onclick="setQ('Revenue by region')">
+        <span class="sq-icon">🌏</span> Revenue by region
+      </div>
+      <div class="sq" onclick="setQ('Monthly trend in 2017')">
+        <span class="sq-icon">📅</span> Monthly trend in 2017
+      </div>
+      <div class="sq" onclick="setQ('Revenue by product category')">
+        <span class="sq-icon">🚲</span> Revenue by product category
+      </div>
+      <div class="sq" onclick="setQ('Year over year revenue comparison')">
+        <span class="sq-icon">📊</span> Year-over-year revenue
+      </div>
+      <div class="sq" onclick="setQ('Returns analysis by category')">
+        <span class="sq-icon">↩️</span> Returns by category
+      </div>
+      <div class="sq" onclick="setQ('Profit margin by category')">
+        <span class="sq-icon">💹</span> Profit margin analysis
+      </div>
+      <div class="sq" onclick="setQ('Australia sales performance')">
+        <span class="sq-icon">🦘</span> Australia performance
+      </div>
+      <div class="sq" onclick="setQ('Best selling mountain bikes')">
+        <span class="sq-icon">⛰️</span> Best mountain bikes
+      </div>
+    </div>
+
+    <div class="s-section">
+      <div class="s-title">Data Model</div>
+      <div class="schema-item"><div class="sdot" style="background:#378ADD"></div>Sales 2015/16/17</div>
+      <div class="schema-item"><div class="sdot" style="background:#378ADD"></div>Returns (1,809)</div>
+      <div class="schema-item"><div class="sdot" style="background:#1D9E75"></div>Products (293)</div>
+      <div class="schema-item"><div class="sdot" style="background:#1D9E75"></div>Customers (18,148)</div>
+      <div class="schema-item"><div class="sdot" style="background:#1D9E75"></div>Territories (10)</div>
+      <div class="schema-item"><div class="sdot" style="background:#BA7517"></div>Product Categories</div>
+      <div class="schema-item"><div class="sdot" style="background:#BA7517"></div>Subcategories (37)</div>
+      <div class="schema-item"><div class="sdot" style="background:#888780"></div>Calendar</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="input-card">
+      <div class="input-lbl">✦ Ask in plain English — no DAX required</div>
+      <div class="input-row">
+        <input class="nl-inp" id="nlInp" type="text"
+          placeholder="e.g. Which region has the highest revenue? Which product makes the most profit?" />
+        <button class="ask-btn" id="askBtn" onclick="doAsk()">
+          ➤ Analyse
+        </button>
+      </div>
+      <div class="no-api-banner">
+        ✓ Fully offline — no API key or internet connection required · All answers computed from real AdventureWorks data
+      </div>
+    </div>
+
+    <div id="out">
+      <div class="empty-state">
+        <div class="empty-icon">💬</div>
+        <div class="empty-title">Ask anything about AdventureWorks</div>
+        <div class="empty-sub">
+          Pick a question from the left panel or type your own.<br>
+          Get a business insight, ready-to-use DAX measure, and a visual preview<br>
+          — all powered by real sales data from 2015 to 2017.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── REAL DATA ──────────────────────────────────────────────
+const AW = {
+  annual: [
+    {yr:2015, rev:6404934, profit:2601602, margin:40.6},
+    {yr:2016, rev:9324204, profit:3967084, margin:42.5},
+    {yr:2017, rev:9185449, profit:3889029, margin:42.3}
+  ],
+  regions: [
+    {r:'Australia',      v:7416456, pct:100},
+    {r:'Southwest US',   v:4822795, pct:65},
+    {r:'Northwest US',   v:3095074, pct:42},
+    {r:'United Kingdom', v:2902562, pct:39},
+    {r:'Germany',        v:2524680, pct:34},
+    {r:'France',         v:2362643, pct:32},
+    {r:'Canada',         v:1769246, pct:24}
+  ],
+  categories: [
+    {cat:'Bikes',       rev:23642495, qty:13929, profit:9457715, margin:40.0},
+    {cat:'Accessories', rev:906673,   qty:57809, profit:247862,  margin:27.3},
+    {cat:'Clothing',    rev:365419,   qty:12436, profit:151938,  margin:41.6}
+  ],
+  top10: [
+    {name:'Mountain-200 Black, 46', profit:571633, rev:1241754, qty:606},
+    {name:'Mountain-200 Black, 42', profit:567859, rev:1233557, qty:602},
+    {name:'Mountain-200 Silver, 38',profit:558788, rev:1213852, qty:586},
+    {name:'Mountain-200 Silver, 46',profit:544485, rev:1182781, qty:571},
+    {name:'Mountain-200 Black, 38', profit:536731, rev:1165937, qty:569},
+    {name:'Mountain-200 Silver, 42',profit:521599, rev:1133067, qty:547},
+    {name:'Road-250 Black, 52',     profit:272038, rev:689374,  qty:316},
+    {name:'Road-250 Red, 58',       profit:260846, rev:661013,  qty:303},
+    {name:'Road-250 Black, 48',     profit:253098, rev:641379,  qty:294},
+    {name:'Road-150 Red, 48',       profit:251849, rev:640510,  qty:179}
+  ],
+  monthly2017: [
+    {m:'Jan', v:1274379}, {m:'Feb', v:1339241}, {m:'Mar', v:1448596},
+    {m:'Apr', v:1527814}, {m:'May', v:1768433}, {m:'Jun', v:1826987}
+  ],
+  returns: [
+    {cat:'Accessories', units:1130, sold:57809, rate:1.95},
+    {cat:'Bikes',       units:429,  sold:13929, rate:3.08},
+    {cat:'Clothing',    units:269,  sold:12436, rate:2.16}
+  ],
+  australia: {rev:7416456, pct:29.8, orders:3806, topProd:'Mountain-200 series'}
+};
+
+// ── ANSWER BANK ────────────────────────────────────────────
+const ANSWERS = {
+
+  top10: {
+    insight: `The Mountain-200 series completely dominates AdventureWorks profitability, holding all 6 of the top spots. The Mountain-200 Black (size 46) leads with $571,633 in total profit across 606 units sold — an exceptional result driven by its premium price point and strong margins. Road-250 variants round out positions 7–10. This concentration suggests that high-end mountain bikes are the undisputed profit engine of the business, and any inventory or marketing investment should prioritise this product family.`,
+    dax: `// Top 10 Products by Total Profit
+// Paste into Power BI Desktop → Modelling → New Measure
+
+Total Profit =
+SUMX(
+    Sales,
+    Sales[OrderQuantity] *
+    ( RELATED(Products[ProductPrice])
+    - RELATED(Products[ProductCost]) )
+)
+
+// Then create a Table visual, add ProductName + [Total Profit]
+// and apply a Top N visual-level filter = 10`,
+    visual: 'bar',
+    vdata: {
+      title: 'Top 10 products by total profit (all years)',
+      items: AW.top10.map((p,i) => ({
+        label: p.name.replace('Mountain-200','MT-200').replace('Road-250','RD-250').replace('Road-150','RD-150'),
+        val: p.profit,
+        pct: Math.round(p.profit / 571633 * 100),
+        color: i < 6 ? '#185FA5' : '#378ADD'
+      }))
+    },
+    rec: '📊 Horizontal Bar Chart — best for ranked product comparisons. Apply a "Top N" visual-level filter to make it dynamic and let users adjust the ranking.'
+  },
+
+  region: {
+    insight: `Australia is AdventureWorks' single largest market by far, generating $7.4M — nearly 30% of all global revenue and almost double Southwest US in second place at $4.8M. Combined, the three international markets (Australia, UK, Germany, France) outperform the three US territories, which is a striking finding for a company that may be perceived as US-centric. This international strength should inform regional sales investment and resource allocation decisions.`,
+    dax: `// Revenue by Sales Territory
+Revenue by Region =
+SUMX(
+    Sales,
+    Sales[OrderQuantity] * RELATED(Products[ProductPrice])
+)
+
+// Region Revenue Rank (use for conditional formatting)
+Region Rank =
+RANKX(
+    ALL(Territories[Region]),
+    [Revenue by Region],, DESC, Dense
+)
+
+// % of Total Revenue
+Revenue Share % =
+DIVIDE(
+    [Revenue by Region],
+    CALCULATE([Revenue by Region], ALL(Territories))
+)`,
+    visual: 'bar',
+    vdata: {
+      title: 'Total revenue by region — all years combined ($)',
+      items: AW.regions.map(r => ({label: r.r, val: r.v, pct: r.pct, color: '#185FA5'}))
+    },
+    rec: '🗺️ Filled Map + Bar Chart — use a Filled Map visual for geographic impact, paired with a Bar Chart showing the revenue magnitude. Australia will immediately stand out.'
+  },
+
+  monthly: {
+    insight: `Revenue in 2017 shows a clear and consistent upward trajectory, growing 43% from $1.27M in January to $1.83M in June in just six months. This seasonal acceleration — likely driven by spring and summer cycling demand — suggests strong momentum. If the H2 2017 trend continues at the same rate, annual 2017 revenue could exceed $12M, significantly outpacing 2016's $9.3M. The April-to-June acceleration is particularly notable and worth tracking against promotional calendar activity.`,
+    dax: `// Monthly Revenue (use with Calendar table)
+Monthly Revenue =
+CALCULATE(
+    SUMX(Sales, Sales[OrderQuantity] * RELATED(Products[ProductPrice])),
+    DATESMTD(Calendar[Date])
+)
+
+// Month-over-Month Growth %
+MoM Growth % =
+VAR CurrentMonth = [Monthly Revenue]
+VAR PriorMonth =
+    CALCULATE(
+        [Monthly Revenue],
+        DATEADD(Calendar[Date], -1, MONTH)
+    )
+RETURN
+    DIVIDE(CurrentMonth - PriorMonth, PriorMonth)`,
+    visual: 'line',
+    vdata: {
+      title: '2017 monthly revenue trend (Jan–Jun)',
+      points: AW.monthly2017
+    },
+    rec: '📈 Line Chart with Analytics Pane — add a trend line and forecast using Power BI\'s built-in Analytics pane to project H2 2017 revenue automatically.'
+  },
+
+  category: {
+    insight: `Bikes are the overwhelming revenue driver at $23.6M — 95% of total revenue — but the story is more nuanced than that. Accessories drive the highest unit volume with 57,809 units sold, creating a major upsell opportunity that is currently being undervalued in revenue terms. Clothing's 41.6% margin actually exceeds Bikes' 40%, making it a high-potential category that is currently underdeveloped at just $365K in revenue. A focused push to grow Clothing and premium Accessories could meaningfully diversify revenue without cannibalising the Bike business.`,
+    dax: `// Revenue by Product Category
+Revenue by Category =
+CALCULATE(
+    SUMX(Sales, Sales[OrderQuantity] * RELATED(Products[ProductPrice])),
+    USERELATIONSHIP(
+        Products[ProductSubcategoryKey],
+        Subcategories[ProductSubcategoryKey]
+    )
+)
+
+// Category Revenue Share
+Category Share % =
+DIVIDE(
+    [Revenue by Category],
+    CALCULATE([Revenue by Category], ALL(Categories))
+)`,
+    visual: 'donut',
+    vdata: {
+      title: 'Revenue split by product category',
+      slices: [
+        {label:'Bikes',       pct:95, val:'$23.6M', color:'#185FA5'},
+        {label:'Accessories', pct:4,  val:'$907K',  color:'#1D9E75'},
+        {label:'Clothing',    pct:1,  val:'$365K',  color:'#BA7517'}
+      ]
+    },
+    rec: '🍩 Donut Chart + Clustered Bar — use the Donut for revenue share (showing Bikes dominance), then a separate Bar Chart showing units sold to tell the Accessories volume story side-by-side.'
+  },
+
+  yoy: {
+    insight: `AdventureWorks achieved remarkable 46% year-over-year growth from 2015 ($6.4M) to 2016 ($9.3M), largely driven by the launch of Accessories and Clothing categories in 2016 which added entirely new revenue streams. Revenue was essentially flat in 2017 ($9.2M, -1.5%), suggesting market saturation in existing channels rather than a business problem — profit margins remained strong at 42.3%. The key strategic question is: what is the next category or territory expansion to drive the next growth phase?`,
+    dax: `// Year-over-Year Revenue Growth
+YoY Revenue Growth % =
+VAR CurrentYearRev = [Total Revenue]
+VAR PriorYearRev =
+    CALCULATE(
+        [Total Revenue],
+        DATEADD(Calendar[Date], -1, YEAR)
+    )
+RETURN
+    DIVIDE(CurrentYearRev - PriorYearRev, PriorYearRev)
+
+// Total Revenue (base measure)
+Total Revenue =
+SUMX(
+    Sales,
+    Sales[OrderQuantity] * RELATED(Products[ProductPrice])
+)`,
+    visual: 'kpi',
+    vdata: {
+      title: 'Annual revenue and profit snapshot — 2015 to 2017',
+      kpis: [
+        {label:'2015 Revenue', val:'$6.4M',  delta:'Baseline year', up:true},
+        {label:'2016 Revenue', val:'$9.3M',  delta:'+45.6% YoY',   up:true},
+        {label:'2017 Revenue', val:'$9.2M',  delta:'-1.5% YoY',    up:false},
+        {label:'2015 Profit',  val:'$2.6M',  delta:'40.6% margin',  up:true},
+        {label:'2016 Profit',  val:'$3.97M', delta:'42.5% margin',  up:true},
+        {label:'2017 Profit',  val:'$3.89M', delta:'42.3% margin',  up:true}
+      ]
+    },
+    rec: '📊 KPI Cards + Clustered Column Chart — use KPI cards for the at-a-glance headline numbers, and a clustered column chart to show the magnitude difference across years with a reference line at the 2016 peak.'
+  },
+
+  returns: {
+    insight: `Returns data reveals some important nuances. Accessories have the highest absolute return volume (1,130 units) but the lowest return rate at just 1.95% given their high sales volume. Bikes have the most concerning return rate at 3.08% — and given the high per-unit value ($2,049 avg price), each bike return represents a significant revenue reversal. Clothing's 2.16% return rate suggests possible sizing or quality inconsistencies worth investigating. Monitoring return rates by subcategory would provide more actionable insights.`,
+    dax: `// Return Rate by Category
+Return Rate % =
+DIVIDE(
+    SUMX(Returns, Returns[ReturnQuantity]),
+    SUMX(Sales, Sales[OrderQuantity])
+)
+
+// Total Returns
+Total Returns = SUM(Returns[ReturnQuantity])
+
+// Estimated Returns Value
+Returns Value =
+SUMX(
+    Returns,
+    Returns[ReturnQuantity] * RELATED(Products[ProductPrice])
+)`,
+    visual: 'bar',
+    vdata: {
+      title: 'Returns by category — volume and rate',
+      items: [
+        {label:'Accessories (1.95% rate)', val:1130, pct:100, color:'#BA7517'},
+        {label:'Bikes (3.08% rate)',        val:429,  pct:38,  color:'#A32D2D'},
+        {label:'Clothing (2.16% rate)',     val:269,  pct:24,  color:'#534AB7'}
+      ]
+    },
+    rec: '📊 Clustered Bar with secondary axis — show units returned on the primary axis and return rate % on the secondary axis. This prevents the misleading impression that Accessories are the problem category.'
+  },
+
+  margin: {
+    insight: `All three product categories maintain healthy profit margins, but Clothing's 41.6% margin actually beats Bikes' 40.0% despite its much smaller revenue base. This is a significant strategic signal — Clothing is a high-margin, underdeveloped category. Accessories at 27.3% margin are the weakest performers on profitability, yet drive the most unit volume. A pricing review for Accessories and an aggressive growth push for Clothing could substantially improve the overall blended margin profile.`,
+    dax: `// Gross Profit Margin %
+Profit Margin % =
+DIVIDE(
+    SUMX(
+        Sales,
+        Sales[OrderQuantity] *
+        ( RELATED(Products[ProductPrice])
+        - RELATED(Products[ProductCost]) )
+    ),
+    SUMX(
+        Sales,
+        Sales[OrderQuantity] * RELATED(Products[ProductPrice])
+    )
+)
+
+// Gross Profit Amount
+Gross Profit =
+SUMX(
+    Sales,
+    Sales[OrderQuantity] *
+    ( RELATED(Products[ProductPrice])
+    - RELATED(Products[ProductCost]) )
+)`,
+    visual: 'kpi',
+    vdata: {
+      title: 'Profit margin by product category',
+      kpis: [
+        {label:'Bikes margin %',      val:'40.0%', delta:'$9.46M profit',  up:true},
+        {label:'Accessories margin %', val:'27.3%', delta:'$248K profit',   up:false},
+        {label:'Clothing margin %',    val:'41.6%', delta:'$152K profit',   up:true}
+      ]
+    },
+    rec: '📊 KPI Cards + Scatter Plot — KPI cards for quick margin comparison, then a Scatter Plot with Revenue (x-axis) vs Margin % (y-axis) and bubble size = units sold. This reveals the portfolio balance story at a glance.'
+  },
+
+  australia: {
+    insight: `Australia is AdventureWorks' standout market globally, generating $7.4M in revenue — 29.8% of total global revenue — making it larger than any single US territory. With 3,806 orders across the period, the Australian market shows consistent high-value purchasing behaviour. The Mountain-200 series is the dominant product family here, mirroring the global trend. Understanding what drives such strong Australian performance (pricing, distribution, demographics) could provide a blueprint for accelerating growth in underperforming territories like Canada ($1.8M) and Central US ($3K).`,
+    dax: `// Australia-specific Revenue
+Australia Revenue =
+CALCULATE(
+    SUMX(Sales, Sales[OrderQuantity] * RELATED(Products[ProductPrice])),
+    Territories[Country] = "Australia"
+)
+
+// Australia Share of Total
+Australia Revenue % =
+DIVIDE(
+    [Australia Revenue],
+    [Total Revenue]
+)`,
+    visual: 'kpi',
+    vdata: {
+      title: 'Australia market performance snapshot',
+      kpis: [
+        {label:'Australia Revenue',   val:'$7.4M', delta:'#1 globally',      up:true},
+        {label:'Global Revenue Share', val:'29.8%', delta:'Largest territory', up:true},
+        {label:'vs. Canada (2nd Intl)',val:'4.2×',  delta:'$1.77M Canada',    up:true}
+      ]
+    },
+    rec: '🗺️ Filled Map + Decomposition Tree — the Filled Map shows Australia\'s dominance geographically, while a Decomposition Tree lets users drill into WHY Australia outperforms (by product, by quarter, by customer segment).'
+  },
+
+  mountain: {
+    insight: `The Mountain-200 series is AdventureWorks' flagship product family in every sense. The top 6 products by profit are all Mountain-200 variants across Black and Silver colours in sizes 38, 42, and 46. Combined, these 6 variants generated over $3.3M in profit on roughly 3,481 units — an average of $948 profit per unit. No other product family comes close to this performance. Size 46 Black leads the pack, but the performance differential between variants is small, suggesting consistent quality across the range rather than a single hero SKU.`,
+    dax: `// Mountain-200 Family Revenue
+Mountain200 Revenue =
+CALCULATE(
+    SUMX(Sales, Sales[OrderQuantity] * RELATED(Products[ProductPrice])),
+    Products[ModelName] = "Mountain-200"
+)
+
+// Mountain-200 Profit
+Mountain200 Profit =
+CALCULATE(
+    SUMX(
+        Sales,
+        Sales[OrderQuantity] *
+        (RELATED(Products[ProductPrice]) - RELATED(Products[ProductCost]))
+    ),
+    Products[ModelName] = "Mountain-200"
+)`,
+    visual: 'bar',
+    vdata: {
+      title: 'Mountain-200 variants — profit by SKU ($)',
+      items: AW.top10.slice(0,6).map(p => ({
+        label: p.name.replace('Mountain-200 ',''),
+        val: p.profit,
+        pct: Math.round(p.profit / 571633 * 100),
+        color: '#185FA5'
+      }))
+    },
+    rec: '📊 Matrix Visual — create a Matrix with Model (rows) × Colour × Size (columns) showing profit. This lets business users instantly see which size/colour combination performs best in each market.'
+  }
+};
+
+// ── INTENT DETECTION ────────────────────────────────────────
+function detect(q) {
+  q = q.toLowerCase();
+  if (/top.*(10|ten)|profit.*product|product.*profit|highest.*profit|max.*profit|best.*product/.test(q)) return 'top10';
+  if (/mountain|mt.?200|flagship|bike.*model|model.*bike/.test(q)) return 'mountain';
+  if (/australia|aussie/.test(q)) return 'australia';
+  if (/region|territory|country|geography|southwest|northwest|uk|germany|france|canada/.test(q)) return 'region';
+  if (/month|trend|time|2017|over.time|series/.test(q)) return 'monthly';
+  if (/categor|segment|bike.*categor|product.type/.test(q)) return 'category';
+  if (/year.*year|yoy|annual|year.*compar|2015|2016|growth/.test(q)) return 'yoy';
+  if (/return/.test(q)) return 'returns';
+  if (/margin|profitab|markup/.test(q)) return 'margin';
+  if (/revenue.*region|region.*revenue|where.*most|which.*region/.test(q)) return 'region';
+  if (/revenue.*categor|categor.*revenue|split|breakdown/.test(q)) return 'category';
+  if (/profit.*categor|categor.*profit/.test(q)) return 'margin';
+  return 'category'; // sensible default
+}
+
+// ── HELPER FORMATTERS ───────────────────────────────────────
+function fmt(n) {
+  if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return '$' + Math.round(n / 1000) + 'K';
+  return '$' + n.toLocaleString();
+}
+
+// ── VISUAL RENDERERS ────────────────────────────────────────
+function renderBar(items) {
+  return items.map(it =>
+    `<div class="bar-row">
+      <div class="bar-lbl">${it.label}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${it.pct}%;background:${it.color}">
+          ${it.pct > 20 ? (typeof it.val === 'number' ? fmt(it.val) : it.val) : ''}
+        </div>
+      </div>
+      ${it.pct <= 20 ? `<span style="font-size:10px;color:var(--text-muted);min-width:50px">${typeof it.val === 'number' ? fmt(it.val) : it.val}</span>` : ''}
+    </div>`
+  ).join('');
+}
+
+function renderKPI(kpis) {
+  return `<div class="kpi-cards">${kpis.map(k => `
+    <div class="kpi-card">
+      <div class="kc-val">${k.val}</div>
+      <div class="kc-lbl">${k.label}</div>
+      <div class="kc-delta ${k.up ? 'up' : 'dn'}">${k.up ? '▲' : '▼'} ${k.delta}</div>
+    </div>`).join('')}</div>`;
+}
+
+function renderLine(points) {
+  const vals = points.map(p => p.v);
+  const mx = Math.max(...vals), mn = Math.min(...vals), rng = mx - mn || 1;
+  const W = 500, H = 130, px = 30, py = 16;
+  const xs = points.map((_, i) => px + (i / (points.length - 1)) * (W - px * 2));
+  const ys = points.map(p => H - py - ((p.v - mn) / rng) * (H - py * 2));
+  const path = xs.map((x, i) => (i ? 'L' : 'M') + x.toFixed(1) + ',' + ys[i].toFixed(1)).join(' ');
+  const area = path + ' L' + xs[xs.length-1].toFixed(1) + ',' + H + ' L' + xs[0].toFixed(1) + ',' + H + ' Z';
+  const labels = points.map((p, i) => `
+    <text x="${xs[i].toFixed(1)}" y="${H + 14}" text-anchor="middle"
+      font-size="10" fill="#6b6b67" font-family="DM Sans">${p.m}</text>
+    <text x="${xs[i].toFixed(1)}" y="${(ys[i] - 7).toFixed(1)}" text-anchor="middle"
+      font-size="9" fill="#185FA5" font-family="DM Sans" font-weight="600">${fmt(p.v)}</text>`).join('');
+  return `<svg class="line-svg" viewBox="0 0 ${W} ${H + 24}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="lg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#185FA5" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="#185FA5" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path d="${area}" fill="url(#lg)"/>
+    <path d="${path}" stroke="#185FA5" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+    ${xs.map((x, i) => `<circle cx="${x.toFixed(1)}" cy="${ys[i].toFixed(1)}" r="4" fill="#185FA5" stroke="#fff" stroke-width="1.5"/>`).join('')}
+    ${labels}
+  </svg>`;
+}
+
+function renderDonut(slices) {
+  const cx = 70, cy = 70, r = 55, ir = 32;
+  let cum = -90;
+  const paths = slices.map(sl => {
+    const ang = sl.pct / 100 * 360;
+    const toXY = (a) => {
+      const rad = a * Math.PI / 180;
+      return [(cx + r * Math.cos(rad)).toFixed(2), (cy + r * Math.sin(rad)).toFixed(2)];
+    };
+    const toIXY = (a) => {
+      const rad = a * Math.PI / 180;
+      return [(cx + ir * Math.cos(rad)).toFixed(2), (cy + ir * Math.sin(rad)).toFixed(2)];
+    };
+    const [x1,y1] = toXY(cum), [x2,y2] = toXY(cum+ang);
+    const [ix1,iy1] = toIXY(cum+ang), [ix2,iy2] = toIXY(cum);
+    const lg = ang > 180 ? 1 : 0;
+    const p = `M${x1},${y1} A${r},${r} 0 ${lg},1 ${x2},${y2} L${ix1},${iy1} A${ir},${ir} 0 ${lg},0 ${ix2},${iy2} Z`;
+    cum += ang;
+    return `<path d="${p}" fill="${sl.color}"/>`;
+  }).join('');
+  const legend = slices.map(sl =>
+    `<div class="legend-row">
+      <div class="ldot" style="background:${sl.color}"></div>
+      <span>${sl.label}</span>
+      <span class="lval">${sl.val} (${sl.pct}%)</span>
+    </div>`
+  ).join('');
+  return `<div class="donut-wrap">
+    <svg width="140" height="140" viewBox="0 0 140 140">${paths}</svg>
+    <div style="flex:1">${legend}</div>
+  </div>`;
+}
+
+function renderVisual(type, vd) {
+  if (type === 'bar')   return renderBar(vd.items);
+  if (type === 'kpi')   return renderKPI(vd.kpis);
+  if (type === 'line')  return renderLine(vd.points);
+  if (type === 'donut') return renderDonut(vd.slices);
+  return '';
+}
+
+// ── MAIN FLOW ───────────────────────────────────────────────
+function setQ(q) {
+  document.getElementById('nlInp').value = q;
+  document.getElementById('nlInp').focus();
+}
+
+document.getElementById('nlInp').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doAsk();
+});
+
+async function doAsk() {
+  const q = document.getElementById('nlInp').value.trim();
+  if (!q) return;
+
+  const btn = document.getElementById('askBtn');
+  btn.disabled = true;
+  btn.innerHTML = '⟳ Analysing...';
+
+  document.getElementById('out').innerHTML =
+    `<div class="loading-card">
+      <div class="spinner"></div>
+      <div class="loading-text">Analysing AdventureWorks data...</div>
+    </div>`;
+
+  await new Promise(r => setTimeout(r, 700));
+
+  const intent = detect(q);
+  const ans = ANSWERS[intent];
+  const cid = 'c' + Date.now();
+
+  document.getElementById('out').innerHTML = `
+    <div class="result-card" id="${cid}">
+      <div class="q-label">💬 "${q}"</div>
+      <div class="tabs">
+        <button class="tab active" data-tab="ins" onclick="sw('ins','${cid}')">💡 Insight</button>
+        <button class="tab" data-tab="dax" onclick="sw('dax','${cid}')">⌨ DAX Measure</button>
+        <button class="tab" data-tab="vis" onclick="sw('vis','${cid}')">📊 Visual Preview</button>
+      </div>
+
+      <div class="tc active" data-con="ins">
+        <p class="insight-text">${ans.insight}</p>
+        <div class="rec-box">📌 <strong>Recommended visual:</strong>&nbsp;${ans.rec}</div>
+      </div>
+
+      <div class="tc" data-con="dax">
+        <div class="dax-wrap">
+          <div class="dax-toolbar">
+            <div class="dax-dot" style="background:#ff5f57"></div>
+            <div class="dax-dot" style="background:#febc2e"></div>
+            <div class="dax-dot" style="background:#28c840"></div>
+            <span class="dax-label">DAX Measure</span>
+            <button class="copy-btn" onclick="cpDax('${cid}')">📋 Copy</button>
+          </div>
+          <div class="dax-block" id="dax_${cid}">${esc(ans.dax)}</div>
+        </div>
+        <div class="dax-note">
+          ⚡ Paste into Power BI Desktop → Modelling tab → New Measure → press Enter
+        </div>
+      </div>
+
+      <div class="tc" data-con="vis">
+        <div class="vis-wrap">
+          <div class="vis-title">${ans.vdata.title}</div>
+          ${renderVisual(ans.visual, ans.vdata)}
+        </div>
+        <div class="dax-note" style="margin-top:8px">
+          📁 Preview based on real AdventureWorks data · Connect your Power BI semantic model for live refresh
+        </div>
+      </div>
+    </div>`;
+
+  btn.disabled = false;
+  btn.innerHTML = '➤ Analyse';
+}
+
+function sw(tab, cid) {
+  const card = document.getElementById(cid);
+  card.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  card.querySelectorAll('.tc').forEach(t => t.classList.remove('active'));
+  card.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+  card.querySelector(`[data-con="${tab}"]`).classList.add('active');
+}
+
+function esc(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function cpDax(cid) {
+  const el = document.getElementById('dax_' + cid);
+  const text = el.innerText.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const card = document.getElementById(cid);
+    const btn = card.querySelector('.copy-btn');
+    btn.innerHTML = '✓ Copied!';
+    setTimeout(() => { btn.innerHTML = '📋 Copy'; }, 2000);
+  });
+}
+</script>
+</body>
+</html>
